@@ -16,4 +16,4 @@ url = "http://wwww.baidu.com/s"
 newurl = url + '?' + urllib.parse.urlencode(word)
 print(newurl)
 request = urllib.request.urlopen(newurl)
-print(request.read())
+print(request.read().decode('utf-8'))

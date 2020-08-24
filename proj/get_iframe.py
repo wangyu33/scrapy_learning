@@ -57,6 +57,7 @@ def get_list(url, cookie = None):
     list_author = driver.find_elements_by_xpath('//tbody//tr//div[@class=\'text\']/span')
     for i in list_author:
         author.append(i.get_attribute('title'))
+    driver.quit()
     dict = {'id': id, 'name': name, 'author': author}
     df = pd.DataFrame(dict, columns = ['id', 'name', 'author'])
     header = {
