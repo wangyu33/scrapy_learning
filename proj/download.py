@@ -4,34 +4,42 @@
 # Author: WangYu
 # Date  : 2020-08-18
 
-import urllib.request,os,json
-import requests,random
-import base64,codecs
-from Crypto.Cipher import AES
+import base64
+import codecs
+import json
 import pickle
+
+import random
+import requests
+from Crypto.Cipher import AES
+
 
 def to_16(key):
     while len(key) % 16 != 0:
         key += '\0'
     return str.encode(key)
 
+
 def AES_encrypt(text, key, iv):
     bs = AES.block_size
     pad2 = lambda s: s + (bs - len(s) % bs) * chr(bs - len(s) % bs)
-    encryptor = AES.new(to_16(key), AES.MODE_CBC,to_16(iv))
+    encryptor = AES.new(to_16(key), AES.MODE_CBC, to_16(iv))
     encrypt_aes = encryptor.encrypt(str.encode(pad2(text)))
     encrypt_text = str(base64.encodebytes(encrypt_aes), encoding='utf-8')
     return encrypt_text
 
+
 def RSA_encrypt(text, pubKey, modulus):
-    text=text[::-1]
-    rs=int(codecs.encode(text.encode('utf-8'), 'hex_codec'), 16) ** int(pubKey, 16) % int(modulus, 16)
+    text = text[::-1]
+    rs = int(codecs.encode(text.encode('utf-8'), 'hex_codec'), 16) ** int(pubKey, 16) % int(modulus, 16)
     return format(rs, 'x').zfill(256)
 
-#获取i值的函数，即随机生成长度为16的字符串
+
+# 获取i值的函数，即随机生成长度为16的字符串
 def get_i():
     txt = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
     return ''.join(random.sample(txt, 16))
+
 
 def set_user_agent():
     USER_AGENTS = [
@@ -47,37 +55,38 @@ def set_user_agent():
     user_agent = random.choice(USER_AGENTS)
     return user_agent
 
+
 class WanYiYun():
     def __init__(self):
-        self.url_search='https://music.163.com/weapi/cloudsearch/get/web?csrf_token=' #post地址
-        self.song_url='https://music.163.com/weapi/song/enhance/player/url/v1?csrf_token='
-        self.g = '0CoJUm6Qyw8W8jud'#buU9L(["爱心", "女孩", "惊恐", "大笑"])的值
-        self.b = "010001"#buU9L(["流泪", "强"])的值
+        self.url_search = 'https://music.163.com/weapi/cloudsearch/get/web?csrf_token='  # post地址
+        self.song_url = 'https://music.163.com/weapi/song/enhance/player/url/v1?csrf_token='
+        self.g = '0CoJUm6Qyw8W8jud'  # buU9L(["爱心", "女孩", "惊恐", "大笑"])的值
+        self.b = "010001"  # buU9L(["流泪", "强"])的值
         # buU9L(Rg4k.md)的值
         self.c = '00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7'
-        self.i = get_i()#随机生成长度为16的字符串
+        self.i = get_i()  # 随机生成长度为16的字符串
         self.iv = "0102030405060708"  # 偏移量
-        self.headers={  'User-Agent':set_user_agent(),
-                        'Referer':'https://music.163.com/',
-                        'Content-Type':'application/x-www-form-urlencoded'
+        self.headers = {'User-Agent': set_user_agent(),
+                        'Referer': 'https://music.163.com/',
+                        'Content-Type': 'application/x-www-form-urlencoded'
                         }
 
-
-    def get_params(self,id):
-        #获取加密后的params
+    def get_params(self, id):
+        # 获取加密后的params
         if isinstance(id, int):
-            #标准 standard 较高  higher  无损lossless
-            encText = {"ids":str([id]),"level":"higher","encodeType":"aac", "csrf_token": ""}
+            # 标准 standard 较高  higher  无损lossless
+            encText = {"ids": str([id]), "level": "higher", "encodeType": "aac", "csrf_token": ""}
         elif id == None:
             encText = {}
         else:
-            encText = {"hlpretag": "<span class=\"s-fc7\">", "hlposttag": "</span>", "s": id, "type": "1", "offset": "0",
-                    "total": "true", "limit": "30", "csrf_token": ""}
+            encText = {"hlpretag": "<span class=\"s-fc7\">", "hlposttag": "</span>", "s": id, "type": "1",
+                       "offset": "0",
+                       "total": "true", "limit": "30", "csrf_token": ""}
         encText = json.dumps(encText)
-        return AES_encrypt(AES_encrypt(encText,self.g, self.iv), self.i, self.iv)
+        return AES_encrypt(AES_encrypt(encText, self.g, self.iv), self.i, self.iv)
 
     def get_encSecKey(self):
-        #获取加密后的encSeckey
+        # 获取加密后的encSeckey
         return RSA_encrypt(self.i, self.b, self.c)
 
     def get_search(self, str):
@@ -108,10 +117,10 @@ class WanYiYun():
             words = words + '歌名:' + music_name + '\n'
             words = words + '歌手:' + music_author + '\n'
             words = words + '专辑名:' + music_album + '\n'
-            formdata = {'params':self.get_params(music_id),
-                      'encSecKey':self.get_encSecKey()}
+            formdata = {'params': self.get_params(music_id),
+                        'encSecKey': self.get_encSecKey()}
 
-            response = requests.post(self.song_url, headers=self.headers, data=formdata, cookies = cookies)
+            response = requests.post(self.song_url, headers=self.headers, data=formdata, cookies=cookies)
             download_url = json.loads(response.content)["data"][0]["url"]
             if download_url:
                 words = words + '下载链接:' + download_url + '\n'
@@ -119,7 +128,8 @@ class WanYiYun():
                 words = words + '下载链接:' + '无' + '\n'
         return words
 
+
 if __name__ == '__main__':
-    wanyiyun=WanYiYun()
+    wanyiyun = WanYiYun()
     # name = input("网易云搜索关键词：")
-    print(wanyiyun.get_download_url('许嵩'))
+    print(wanyiyun.get_download_url('许嵩 浅唱'))

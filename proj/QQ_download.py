@@ -4,7 +4,7 @@
 # Author: WangYu
 # Date  : 2020-08-18
 
-import os,json
+import os, json
 import re
 from selenium import webdriver
 from urllib.parse import quote
@@ -12,15 +12,18 @@ import time
 import requests
 import pickle
 import random
+
+
 def getcookie():
     driver = webdriver.Chrome('chromedriver.exe')
     driver.get('https://y.qq.com/')
     time.sleep(30)
     cookie = driver.get_cookies()
     driver.quit()
-    with open('QQyy_cookie.pkl', 'wb') as f:  # db_cookie_1 为文件，不是文件夹，只需要建立一个test_cookies文件即可。
+    with open('QQyy_cookie.pkl', 'wb') as f:
         pickle.dump(cookie, f)
     return cookie
+
 
 def set_user_agent():
     USER_AGENTS = [
@@ -36,20 +39,21 @@ def set_user_agent():
     user_agent = random.choice(USER_AGENTS)
     return user_agent
 
+
 class QQ_Music():
     def __init__(self):
-        self.get_music_url='https://c.y.qq.com/soso/fcgi-bin/client_search_cp?new_json=1&remoteplace=txt.yqq.song&t=0&aggr=1&cr=1&w={}&format=json&platform=yqq.json'
-        self.get_song_url='https://u.y.qq.com/cgi-bin/musicu.fcg?data={"req_0":{"module":"vkey.GetVkeyServer","method":"CgiGetVkey","param":{"guid":"602087500","songmid":["%s"],"songtype":[0],"uin":"0","loginflag":1,"platform":"20"}},"comm":{"uin":0,"format":"json","ct":24,"cv":0}}'
-        self.download_url='http://dl.stream.qqmusic.qq.com/'
+        self.get_music_url = 'https://c.y.qq.com/soso/fcgi-bin/client_search_cp?new_json=1&remoteplace=txt.yqq.song&t=0&aggr=1&cr=1&w={}&format=json&platform=yqq.json'
+        self.get_song_url = 'https://u.y.qq.com/cgi-bin/musicu.fcg?data={"req_0":{"module":"vkey.GetVkeyServer","method":"CgiGetVkey","param":{"guid":"4095854469","songmid":["%s"],"songtype":[0],"uin":"0","loginflag":1,"platform":"20"}},"comm":{"uin":0,"format":"json","ct":24,"cv":0}}'
+        self.download_url = 'http://dl.stream.qqmusic.qq.com/'
         self.headers = {'User-Agent': set_user_agent()}
 
-    def parse_url(self,url):
+    def parse_url(self, url):
         response = requests.get(url)
         return response.content.decode()
 
-    def get_music_list(self,keyword):
-        music_dirt=json.loads(self.parse_url(self.get_music_url.format(quote(keyword))))
-        music_list=music_dirt['data']['song']['list']
+    def get_music_list(self, keyword):
+        music_dirt = json.loads(self.parse_url(self.get_music_url.format(quote(keyword))))
+        music_list = music_dirt['data']['song']['list']
 
         return music_list
 
@@ -64,7 +68,7 @@ class QQ_Music():
             cookies[c['name']] = c['value']
         cnt = 0
         for music in music_list:
-            #歌手
+            # 歌手
             if cnt == 3:
                 break
             cnt = cnt + 1
@@ -106,12 +110,13 @@ class QQ_Music():
                                      re.S)
                 m_url = pattern.findall(response)
                 if m_url:
-                    m_url[0] = m_url[0].replace(';','&')
+                    m_url[0] = m_url[0].replace(';', '&')
                     words = words + '下载链接:' + m_url[0] + '\n'
                 else:
                     words = words + '下载链接:' + '无' + '\n'
         return words
 
+
 if __name__ == '__main__':
-    qqmusic=QQ_Music()
-    print(qqmusic.get_download_url(' 浅笑'))
+    qqmusic = QQ_Music()
+    print(qqmusic.get_download_url('许嵩浅唱'))
